@@ -1,7 +1,6 @@
 # Compiler and flags
 EMCC = em++
-CXXFLAGS = -O2 -D_EMSCRIPTEN -s WASM=1 -s MODULARIZE=1 -s EXPORT_NAME="createModule" \
-           -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]'
+CXXFLAGS = -O2 -D_EMSCRIPTEN -s WASM=1 -s MODULARIZE=1 -s EXPORT_NAME="createModule" 
 
 # Source and output files
 SRC = functions.cpp
