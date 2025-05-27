@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebAssembly Classes</title>
+    <script src="classes.js"></script>
+</head>
+<body>
+    <h1>WebAssembly Classes</h1>
+    <button id="createInstanceButton">Create MyBasicClass Instance</button>
+    <button id="setValueButton">Set Value to 42</button>
+    <button id="getValueButton">Get Value</button>
+    <button id="greetButton">Call greet()</button>
+    <p id="output"></p>
+
+    <script>
+        // Load the WebAssembly module
+        MyClassModule().then((Module) => {
+            let instance = null;
+
+            // Add event listeners to buttons
+            document.getElementById('createInstanceButton').addEventListener('click', () => {
+                if (instance !== null)
+                    instance.delete(); // Clean up previous instance if it exists
+                instance = new Module.MyBasicClass(0);
+                document.getElementById('output').textContent = "Created MyBasicClass instance with initial value 0.";
+            });
+
+            document.getElementById('setValueButton').addEventListener('click', () => {
+                if (instance) {
+                    instance.setValue(42);
+                    document.getElementById('output').textContent = "Set value to 42.";
+                } else {
+                    document.getElementById('output').textContent = "Instance not created yet.";
+                }
+            });
+
+            document.getElementById('getValueButton').addEventListener('click', () => {
+                if (instance) {
+                    const value = instance.getValue();
+                    document.getElementById('output').textContent = `Current value is ${value}.`;
+                } else {
+                    document.getElementById('output').textContent = "Instance not created yet.";
+                }
+            });
+
+            document.getElementById('greetButton').addEventListener('click', () => {
+                if (instance) {
+                    instance.greet();
+                    document.getElementById('output').textContent = "Called greet(). Check the console for output.";
+                } else {
+                    document.getElementById('output').textContent = "Instance not created yet.";
+                }
+            });
+        });
+    </script>
+</body>
+</html>
