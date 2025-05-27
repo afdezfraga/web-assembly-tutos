@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebAssembly Functions</title>
+    <script src="functions.js"></script>
+</head>
+<body>
+    <h1>WebAssembly Functions</h1>
+    <button id="helloButton">Call helloWorld()</button>
+    <button id="addButton">Call add(5, 3)</button>
+    <p id="output"></p>
+
+    <script>
+        // Load the WebAssembly module
+        createModule().then((Module) => {
+            // Wrap the functions
+            const helloWorld = Module.helloWorld;
+            const add = Module.add;
+
+            // Add event listeners to buttons
+            document.getElementById('helloButton').addEventListener('click', () => {
+                helloWorld();
+                document.getElementById('output').textContent = "Called helloWorld()!";
+            });
+
+            document.getElementById('addButton').addEventListener('click', () => {
+                const result = add(5, 3);
+                console.log(`add(5, 3) = ${result}`);
+                document.getElementById('output').textContent = `Called add(5, 3) with result = ${result} !`;
+            });
+        });
+    </script>
+</body>
+</html>
