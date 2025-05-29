@@ -99,7 +99,7 @@ int main() {
     }
 
     #ifdef _EMSCRIPTEN
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
     #else
@@ -116,8 +116,22 @@ int main() {
     glewInit();
     #endif
 
+// For shaders, version needs to be changed (i think)
+// to 330 core for desktop OpenGL and 300 es for WebGL
+// Also fragColor needs to be changed to out_FragColor
+// and the fragment shader needs to specify the precision for WebGL
+// Example: --> precision mediump float;
+
     const std::string shaderVert = R"""(
 #version 330 core
+layout (location = 0) in vec2 aPos;
+void main() {
+    gl_Position = vec4(aPos, 0.0, 1.0);
+}
+)""";
+
+    const std::string shaderVertWeb = 
+R"""(#version 300 es
 layout (location = 0) in vec2 aPos;
 void main() {
     gl_Position = vec4(aPos, 0.0, 1.0);
@@ -133,6 +147,20 @@ void main() {
     vec2 uv = gl_FragCoord.xy / iResolution;
     vec3 col = 0.5 + 0.5 * cos(iTime + uv.xyx + vec3(0,2,4));
     FragColor = vec4(col, 1.0);
+}
+)""";
+    const std::string shaderFragWeb = 
+R"""(#version 300 es
+precision mediump float;
+
+out vec4 out_FragColor;
+uniform float iTime;
+uniform vec2 iResolution;
+
+void main() {
+    vec2 uv = gl_FragCoord.xy / iResolution;
+    vec3 col = 0.5 + 0.5 * cos(iTime + uv.xyx + vec3(0,2,4));
+    out_FragColor = vec4(col, 1.0);
 }
 )""";
     const std::string shaderFragX = R"""(
@@ -174,8 +202,52 @@ void main() {
     mainImage(FragColor, gl_FragCoord.xy);
 }
 )""";
+    const std::string shaderFragXWeb = 
+R"""(#version 300 es
+precision mediump float;
+out vec4 out_FragColor;
+uniform float iTime;
+uniform vec2 iResolution;
 
+// Palette function from ShaderToy
+vec3 palette(float t) {
+    vec3 a = vec3(0.5, 0.5, 0.5);
+    vec3 b = vec3(0.5, 0.5, 0.5);
+    vec3 c = vec3(1.0, 1.0, 1.0);
+    vec3 d = vec3(0.263, 0.416, 0.557);
+    return a + b * cos(6.28318 * (c * t + d));
+}
+
+// Main image function from ShaderToy
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+    vec2 uv = (fragCoord * 2.0 - iResolution.xy) / iResolution.y;
+    vec2 uv0 = uv;
+    vec3 finalColor = vec3(0.0);
+
+    for (float i = 0.0; i < 4.0; i++) {
+        uv = fract(uv * 1.5) - 0.5;
+        float d = length(uv) * exp(-length(uv0));
+        vec3 col = palette(length(uv0) + i * 0.4 + iTime * 0.4);
+        d = sin(d * 8.0 + iTime) / 8.0;
+        d = abs(d);
+        d = pow(0.01 / d, 1.2);
+        finalColor += col * d;
+    }
+
+    fragColor = vec4(finalColor, 1.0);
+}
+
+// Fragment shader main function
+void main() {
+    mainImage(out_FragColor, gl_FragCoord.xy);
+}
+)""";
+
+#ifdef _EMSCRIPTEN
+    ctx.shader = createProgram(shaderVertWeb, shaderFragXWeb);
+#else
     ctx.shader = createProgram(shaderVert, shaderFragX);
+#endif
 
     float vertices[] = {
         -1.0f, -1.0f,
